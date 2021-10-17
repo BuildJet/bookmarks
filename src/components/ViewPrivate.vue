@@ -14,6 +14,7 @@
 		<SidebarBookmark />
 		<SidebarFolder />
 		<MoveDialog />
+		<CopyDialog />
 		<LoadingModal />
 		<BookmarkContent />
 	</Content>
@@ -28,6 +29,7 @@ import Controls from './Controls'
 import SidebarBookmark from './SidebarBookmark'
 import SidebarFolder from './SidebarFolder'
 import MoveDialog from './MoveDialog'
+import CopyDialog from './CopyDialog'
 import { privateRoutes } from '../router'
 import { actions, mutations } from '../store/'
 import LoadingModal from './LoadingModal'
@@ -47,6 +49,7 @@ export default {
 		SidebarBookmark,
 		SidebarFolder,
 		MoveDialog,
+		CopyDialog,
 	},
 	data() {
 		return {
@@ -77,13 +80,11 @@ export default {
 		// set loading indicator
 		this.$store.commit(mutations.FETCH_START, { type: 'bookmarks' })
 
-		this.reloadTags()
-		this.reloadCount()
-		await Promise.all([
-			this.reloadSettings(),
-			this.reloadFolders(),
-		])
+		await this.reloadSettings()
 		this.onRoute()
+		this.reloadFolders()
+		this.reloadCount()
+		this.reloadTags()
 
 		const currentUser = getCurrentUser()
 		if (currentUser.isAdmin) {

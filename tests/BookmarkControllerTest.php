@@ -17,6 +17,7 @@ use OCA\Bookmarks\Db\ShareMapper;
 use OCA\Bookmarks\Db\TagMapper;
 use OCA\Bookmarks\Db\TreeMapper;
 use OCA\Bookmarks\Exception\AlreadyExistsError;
+use OCA\Bookmarks\Exception\UnauthenticatedError;
 use OCA\Bookmarks\Exception\UnsupportedOperation;
 use OCA\Bookmarks\Exception\UrlParseError;
 use OCA\Bookmarks\Exception\UserLimitExceededError;
@@ -25,6 +26,7 @@ use OCA\Bookmarks\Service\Authorizer;
 use OCA\Bookmarks\Service\BookmarkService;
 use OCA\Bookmarks\Service\FolderService;
 use OCA\Bookmarks\Service\HtmlExporter;
+use OCA\Bookmarks\Service\LockManager;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Http;
@@ -146,6 +148,10 @@ class BookmarkControllerTest extends TestCase {
 	 * @var FolderService
 	 */
 	private $folders;
+	/**
+	 * @var LockManager
+	 */
+	private $lockManager;
 
 	/**
 	 * @throws \OCP\AppFramework\QueryException
@@ -188,14 +194,15 @@ class BookmarkControllerTest extends TestCase {
 		$htmlExporter = OC::$server->get(HtmlExporter::class);
 		$this->authorizer = OC::$server->get(Authorizer::class);
 		$this->folders = OC::$server->get(FolderService::class);
+		$this->lockManager = OC::$server->get(LockManager::class);
 
 		/** @var IRootFolder $rootFolder */
 		$rootFolder = OC::$server->get(IRootFolder::class);
 
-		$this->controller = new BookmarkController('bookmarks', $this->request, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder);
-		$this->otherController = new BookmarkController('bookmarks', $this->request, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder);
+		$this->controller = new BookmarkController('bookmarks', $this->request, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder, $this->lockManager);
+		$this->otherController = new BookmarkController('bookmarks', $this->request, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder, $this->lockManager);
 
-		$this->publicController = new BookmarkController('bookmarks', $this->publicRequest, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder);
+		$this->publicController = new BookmarkController('bookmarks', $this->publicRequest, $l, $this->bookmarkMapper, $this->tagMapper, $this->folderMapper, $this->treeMapper, $this->publicFolderMapper, $timeFactory, $logger, $urlGenerator, $htmlExporter, $this->authorizer, $this->bookmarks, $this->folders, $rootFolder, $this->lockManager);
 	}
 
 	/**
@@ -317,9 +324,8 @@ class BookmarkControllerTest extends TestCase {
 		$this->cleanUp();
 		$this->setupBookmarks();
 		$this->authorizer->setUserId(null);
-		$output = $this->publicController->getSingleBookmark($this->bookmark1Id);
-		$data = $output->getData();
-		$this->assertEquals('error', $data['status'], var_export($data, true));
+		$this->expectException(UnauthenticatedError::class);
+		$this->publicController->getSingleBookmark($this->bookmark1Id);
 	}
 
 	/**
@@ -513,7 +519,7 @@ class BookmarkControllerTest extends TestCase {
 		$output = $this->publicController->getSingleBookmark(987);
 		$data = $output->getData();
 		$this->assertSame('error', $data['status'], var_export($data, true));
-		$this->assertSame(404, $output->getStatus());
+		$this->assertSame(403, $output->getStatus());
 	}
 
 	/**
@@ -716,5 +722,40 @@ class BookmarkControllerTest extends TestCase {
 
 		$r = $this->otherController->clickBookmark('https://www.golem.de');
 		$this->assertNotSame(Http::STATUS_OK, $r->getStatus());
+	}
+
+	/**
+	 * @throws AlreadyExistsError
+	 * @throws DoesNotExistException
+	 * @throws MultipleObjectsReturnedException
+	 * @throws UrlParseError
+	 * @throws UserLimitExceededError
+	 * @throws UnsupportedOperation
+	 */
+	public function testLock(): void {
+		$this->cleanUp();
+		$this->setupBookmarksWithSharedFolder();
+		$this->authorizer->setUserId($this->userId);
+
+		// First come, gets the lock
+		$output = $this->controller->acquireLock();
+		$this->assertEquals(Http::STATUS_OK, $output->getStatus());
+
+		// Second gets an error
+		$output = $this->controller->acquireLock();
+		$this->assertEquals(Http::STATUS_LOCKED, $output->getStatus());
+
+		// Releasing...
+		$output = $this->controller->releaseLock();
+		$this->assertEquals(Http::STATUS_OK, $output->getStatus());
+
+		// Then we get the lock again
+		$output = $this->controller->acquireLock();
+		$this->assertEquals(Http::STATUS_OK, $output->getStatus());
+
+		// other users can lock independently
+		$this->authorizer->setUserId($this->otherUserId);
+		$output = $this->otherController->acquireLock();
+		$this->assertEquals(Http::STATUS_OK, $output->getStatus());
 	}
 }

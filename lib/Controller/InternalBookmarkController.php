@@ -43,6 +43,7 @@ class InternalBookmarkController extends ApiController {
 		if ($this->userId !== null) {
 			$authorizer->setUserId($this->userId);
 		}
+		$authorizer->setCORS(false);
 	}
 
 	/**
@@ -97,7 +98,7 @@ class InternalBookmarkController extends ApiController {
 	 *
 	 * @NoAdminRequired
 	 */
-	public function newBookmark($url = "", $title = null, $description = "", $tags = [], $folders = []): JSONResponse {
+	public function newBookmark($url = "", $title = null, $description = null, $tags = null, $folders = []): JSONResponse {
 		return $this->publicController->newBookmark($url, $title, $description, $tags, $folders);
 	}
 
@@ -173,7 +174,7 @@ class InternalBookmarkController extends ApiController {
 	 *
 	 * @param int $id The id of the bookmark whose favicon shoudl be returned
 	 *
-	 * @return Http\DataDisplayResponse|Http\NotFoundResponse|Http\RedirectResponse
+	 * @return Http\DataDisplayResponse|Http\NotFoundResponse|Http\RedirectResponse|Http\DataResponse
 	 *
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
@@ -187,7 +188,7 @@ class InternalBookmarkController extends ApiController {
 	/**
 	 * @param int $id The id of the bookmark whose image shoudl be returned
 	 *
-	 * @return Http\DataDisplayResponse|Http\NotFoundResponse|Http\RedirectResponse
+	 * @return Http\DataDisplayResponse|Http\NotFoundResponse|Http\RedirectResponse|Http\DataResponse
 	 *
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
@@ -230,5 +231,23 @@ class InternalBookmarkController extends ApiController {
 	 */
 	public function countArchived(): JSONResponse {
 		return $this->publicController->countArchived();
+	}
+
+	/**
+	 * @return JSONResponse
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
+	public function acquireLock(): JSONResponse {
+		return $this->publicController->acquireLock();
+	}
+
+	/**
+	 * @return JSONResponse
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
+	public function releaseLock(): JSONResponse {
+		return $this->publicController->releaseLock();
 	}
 }

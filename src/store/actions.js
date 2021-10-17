@@ -27,6 +27,7 @@ export const actions = {
 	OPEN_BOOKMARK: 'OPEN_BOOKMARK',
 	SAVE_BOOKMARK: 'SAVE_BOOKMARK',
 	MOVE_BOOKMARK: 'MOVE_BOOKMARK',
+	COPY_BOOKMARK: 'COPY_BOOKMARK',
 	CLICK_BOOKMARK: 'CLICK_BOOKMARK',
 	IMPORT_BOOKMARKS: 'IMPORT_BOOKMARKS',
 	DELETE_BOOKMARKS: 'DELETE_BOOKMARKS',
@@ -44,6 +45,7 @@ export const actions = {
 	OPEN_FOLDER_SHARING: 'OPEN_FOLDER_SHARING',
 
 	MOVE_SELECTION: 'MOVE_SELECTION',
+	COPY_SELECTION: 'COPY_SELECTION',
 	DELETE_SELECTION: 'DELETE_SELECTION',
 	TAG_SELECTION: 'TAG_SELECTION',
 
@@ -345,6 +347,33 @@ export default {
 			commit(
 				mutations.SET_ERROR,
 				AppGlobal.methods.t('bookmarks', 'Failed to move bookmark')
+			)
+			throw err
+		}
+	},
+	async [actions.COPY_BOOKMARK](
+		{ commit, dispatch, state },
+		{ bookmark, oldFolder, newFolder }
+	) {
+		if (Number(oldFolder) === Number(newFolder)) {
+			return
+		}
+		commit(mutations.FETCH_START, { type: 'copyBookmark' })
+		try {
+			const response = await axios.post(
+				url(state, `/folder/${newFolder}/bookmarks/${bookmark}`)
+			)
+			if (response.data.status !== 'success') {
+				throw new Error(response.data)
+			}
+			commit(mutations.FETCH_END, 'copyBookmark')
+			dispatch(actions.LOAD_FOLDER_CHILDREN_ORDER, newFolder)
+		} catch (err) {
+			console.error(err)
+			commit(mutations.FETCH_END, 'copyBookmark')
+			commit(
+				mutations.SET_ERROR,
+				AppGlobal.methods.t('bookmarks', 'Failed to copy bookmark')
 			)
 			throw err
 		}
@@ -774,6 +803,54 @@ export default {
 			throw err
 		}
 	},
+	async [actions.COPY_SELECTION]({ commit, dispatch, state }, folderId) {
+		commit(mutations.FETCH_START, { type: 'copySelection' })
+		try {
+			await Parallel.each(
+				state.selection.folders,
+				async folder => {
+					if (folderId === folder.id) {
+						throw new Error('Cannot copy folder into itself')
+					}
+					const oldParent = folder.parent_folder
+					folder.parent_folder = folderId
+					await dispatch(actions.SAVE_FOLDER, folder.id) // reloads children order for new parent
+					await dispatch(
+						actions.LOAD_FOLDER_CHILDREN_ORDER,
+						oldParent
+					)
+				},
+				10
+			)
+			await Promise.all([
+				dispatch(actions.LOAD_FOLDERS),
+				Parallel.each(
+					state.selection.bookmarks,
+					bookmark => {
+						commit(mutations.REMOVE_BOOKMARK, bookmark.id)
+						return dispatch(actions.COPY_BOOKMARK, {
+							newFolder: folderId,
+							bookmark: bookmark.id,
+						})
+					},
+					10
+				),
+			])
+
+			commit(mutations.FETCH_END, 'copySelection')
+		} catch (err) {
+			console.error(err)
+			commit(mutations.FETCH_END, 'copySelection')
+			commit(
+				mutations.SET_ERROR,
+				AppGlobal.methods.t(
+					'bookmarks',
+					'Failed to copy parts of selection'
+				)
+			)
+			throw err
+		}
+	},
 	async [actions.DELETE_SELECTION]({ commit, dispatch, state }, { folder }) {
 		commit(mutations.FETCH_START, { type: 'deleteSelection' })
 		try {
@@ -885,9 +962,11 @@ export default {
 		commit(mutations.SET_QUERY, { archived: true })
 		return dispatch(actions.FETCH_PAGE)
 	},
-	[actions.FILTER_BY_FOLDER]({ dispatch, commit }, folder) {
+	[actions.FILTER_BY_FOLDER]({ dispatch, commit, state }, folder) {
 		commit(mutations.SET_QUERY, { folder })
-		dispatch(actions.LOAD_FOLDER_CHILDREN_ORDER, folder)
+		if (state.settings.sorting === 'index') {
+			dispatch(actions.LOAD_FOLDER_CHILDREN_ORDER, folder)
+		}
 		return dispatch(actions.FETCH_PAGE)
 	},
 
@@ -1213,6 +1292,10 @@ export default {
 	},
 }
 
+/**
+ * @param state
+ * @param url
+ */
 function url(state, url) {
 	if (state.public) {
 		url = `/apps/bookmarks/public/rest/v2${url}`

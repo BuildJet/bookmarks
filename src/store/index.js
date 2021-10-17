@@ -38,6 +38,7 @@ export default {
 			createFolder: false,
 			saveFolder: false,
 			moveSelection: false,
+			copySelection: false,
 		},
 		error: null,
 		notification: null,
@@ -64,6 +65,7 @@ export default {
 		displayNewBookmark: false,
 		displayNewFolder: false,
 		displayMoveDialog: false,
+		displayCopyDialog: false,
 		sidebar: null,
 		viewMode: 'list',
 	},
@@ -126,6 +128,10 @@ export default {
 	},
 }
 
+/**
+ * @param id
+ * @param children
+ */
 function findFolder(id, children) {
 	if (!children || !children.length) return []
 	const folders = children.filter(folder => Number(folder.id) === Number(id))

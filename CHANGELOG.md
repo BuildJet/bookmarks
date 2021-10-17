@@ -1,9 +1,76 @@
-
-# Changelog
+## Changelog
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [10.0.1] - 2021-10-06
+
+### Fixed
+ - Drop symfony dependency
+ - Cap description content at 1024 chars
+ - API: Properly return 401 if no auth header was sent
+ - API: Fix CSRF vulnerability
+
+## [10.0.0] - 2021-09-21
+
+### New
+- Add "Add to folders" action for bookmarks
+- API: Implement locking
+
+### Fixed
+- Update browserlist
+- Update dependencies
+- BookmarkService: Don't update bookmark if there have been no changes
+- Disable drag-and-drop when renaming item 
+- SidebarBookmark: Show which folders a bookmark belongs to
+- Fix: Don't hide search behind bookmark details
+- Major version bump to v10 to fix release tags in accordance with semantic versioning
+
+## [4.4.1] - 2021-08-22
+
+### Fixed
+- Accommodate small sort buffer sizes in mysql
+
+
+## [4.4.0] - 2021-07-26
+
+### New
+- Use webpack code splitting for faster loading times
+- bookmark endpoint: Improve performance by introducing supporting query
+- DB: Add new composite index for bookmarks_shared_folders (performance optimzation)
+- Switch to npm7 and use latests global configs
+
+### Fixed
+ - NoBookmarks view: Don't display import and sync buttons in public view
+ - Fix: Adding same bookmark second time removes preexisting tags
+ - Fix input.focus error
+ - Fix hash endpoint: Allow hashing with tags
+
+## [4.3.0] - 2021-07-18
+
+### New
+- Support Nextcloud 22
+- New screenshots
+
+### Fixed
+- Fix OrphanedTreeItemsRepairStep
+- Fix multiselect in sidebar (see #1554)
+- Fix uncaught UrlParseErrors (see #1598)
+- API: Permission errors now have status 403 instead of 405 (see #1602)
+- Add clickcount db index (see #1588)
+
+## [4.2.2] - 2021-06-09
+
+### Fixed
+ - Fix OrphanedTreeItemsRepairStep
+ - Switch out readability.php (#1563)
+ - Fix BulkEditing covering MoveDialog
+ - Add description to "Install on home screen"
+ - UX: Navigation: re-add Search tags menu item
+ - UI: Performance: Don't load children order unnecessarily
+ - UX: Improve initial load time
+ - Fix tag filter query performance issue
 
 ## [4.2.1] - 2021-05-16
 
@@ -556,6 +623,13 @@ Supported are NC 15 and 16, provided you are using PHP v7.1 and have gmp, intl a
 - FIX folder collapse css
 - FIX: Speed up findBookmarks SQL query
 
+[10.0.1]: https://github.com/nextcloud/bookmarks/compare/v10.0.0...v10.0.1
+[10.0.0]: https://github.com/nextcloud/bookmarks/compare/v4.4.1...v10.0.0
+[4.4.1]: https://github.com/nextcloud/bookmarks/compare/v4.4.0...v4.4.1
+[4.4.0]: https://github.com/nextcloud/bookmarks/compare/v4.3.0...v4.4.0
+[4.3.0]: https://github.com/nextcloud/bookmarks/compare/v4.2.2...v4.3.0
+[4.2.2]: https://github.com/nextcloud/bookmarks/compare/v4.2.1...v4.2.2
+[4.2.1]: https://github.com/nextcloud/bookmarks/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/nextcloud/bookmarks/compare/v4.1.0...v4.2.0
 [4.0.8]: https://github.com/nextcloud/bookmarks/compare/v4.0.7...v4.0.8
 [4.0.7]: https://github.com/nextcloud/bookmarks/compare/v4.0.6...v4.0.7

@@ -13,7 +13,7 @@
 			'item--gridview': viewMode === 'grid'
 		}"
 		:style="{ background }"
-		:draggable="draggable"
+		:draggable="draggable && !renaming"
 		@dragstart="onDragStart">
 		<template v-if="!renaming">
 			<a
@@ -154,7 +154,9 @@ export default {
 		},
 	},
 	mounted() {
-		this.$refs.input.focus()
+		if (typeof this.$refs.input !== 'undefined') {
+			this.$refs.input.focus()
+		}
 	},
 	methods: {
 		async onRenameSubmit(event) {
@@ -172,7 +174,7 @@ export default {
 			this.$emit('click', e)
 		},
 		async onDragStart(e) {
-			if (!this.draggable) {
+			if (!this.draggable || this.renaming) {
 				return
 			}
 			if (!this.selected) {

@@ -10,26 +10,25 @@
 
 This app provides you with a web interface for collecting and organizing bookmarks to the places on the web that are precious to you.
  
-- 📂 Browse and filter your bookmarks via tags and folders.
-- 📰 Write down additional notes
-- 🔍 Built-in search integrated into Nextcloud's unified search
+- 📂 Browse and filter your bookmarks via tags and folders and add personal notes
+- 🔍 Built-in full-text search integrated into Nextcloud's unified search
 - 👪 Share bookmarks with other users as well as publicly
-- ☠ Easily find broken links
-- 📔 Archive bookmarked files 
-- 📲 Access your bookmarks anywhere, via a built-in REST API
 - 💡 Keep track of changes in the activity stream
-- 💼 Includes a Dashboard widget
+- ☠ Easily find broken links
+- 📔 All your links are automatically archived for full-text search and in case they are depublished
+- 📲 Access your bookmarks anywhere, on desktop Browsers and on your phone, via a variety of sync clients
+- 💼 Built-in Dashboard widgets for frequent and recent links
 - ⚛ Easily generate public and private RSS feeds of your collections
-
 
 ## Third-party clients
 
 ### Android
 - [Nextcloud Bookmarks](https://gitlab.com/bisada/OCBookmarks) - client app for Android ([Amazon Appstore](https://www.amazon.com/dp/B08L5RKHMM/ref=apps_sf_sta)/[F-Droid](https://f-droid.org/packages/org.schabi.nxbookmarks))
 - [NCBookmark](https://gitlab.com/lenchan139/NCBookmark) - Android App
+- Bookmarks for Nextcloud - client app for Android (phone and tablet) with folders, tags, search, sync ([Google Play Store - Bookmarks for Nextcloud](https://play.google.com/store/apps/details?id=de.emasty.bookmarks))
 
 ### Browser
-- [Owncloud Bookmarks](https://chrome.google.com/webstore/detail/owncloud-bookmarks/eomolhpeokmbnincelpkagpapjpeeckc?hl=de) - Bookmarks extension for Chromium-based browsers (Chromium/Chrome/Opera/Vivaldi)
+- [Owncloud Bookmarks](https://chrome.google.com/webstore/detail/owncloud-bookmarks/eomolhpeokmbnincelpkagpapjpeeckc) - Bookmarks extension for Chromium-based browsers (Chromium/Chrome/Opera/Vivaldi)
 - [Floccus](https://github.com/marcelklehr/floccus) - Bookmark sync for Firefox/Chromium-based browsers
 - [FreedomMarks](https://github.com/damko/freedommarks-browser-webextension) - Addon for Firefox and Chrome. No sync, just a client.
 
@@ -38,7 +37,7 @@ This app provides you with a web interface for collecting and organizing bookmar
 - [QOwnNotes](https://www.qownnotes.org/) - Plain-text file markdown note taking desktop application (no sync, just importing bookmarks)
 
 ### iOS
-- [Nextbookmark](https://gitlab.com/altepizza/nextbookmark) - A minimal client for iOS ([App Store entry](https://apps.apple.com/de/app/nextbookmark/id1500340092))
+- [Nextbookmark](https://gitlab.com/altepizza/nextbookmark) - A minimal client for iOS ([App Store entry](https://apps.apple.com/app/nextbookmark/id1500340092))
 
 ### Other
 - [uMarks](https://open-store.io/app/umarks.ernesst) - App for Ubuntu touch

@@ -31,7 +31,7 @@ jobs:
 
     services:
       mysql:
-        image: mariadb
+        image: mariadb:10.5
         ports:
           - 4444:3306/tcp
         env:
@@ -77,7 +77,7 @@ jobs:
 
       - name: Install app
         working-directory: apps/${{ env.APP_NAME }}
-        run: composer install --ignore-platform-req=php
+        run: composer install --ignore-platform-req=php --no-dev
 
       - name: Set up Nextcloud and install app
         if: ${{ matrix.databases != 'pgsql'}}
@@ -99,11 +99,12 @@ jobs:
 
       - name: Import bookmarks
         run: |
-          curl -u 'admin:admin' -F 'bm_import=@./apps/bookmarks/tests/res/import.file' http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/bookmark/import
+          cp ./apps/bookmarks/tests/res/import.file ./apps/bookmarks/tests/res/import.html
+          curl -u 'admin:password' -vvv --fail -F 'bm_import=@./apps/bookmarks/tests/res/import.html' http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/folder/-1/import
 
       - name: Export bookmarks
         run: |
-          curl -u 'admin:admin' http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/folder/-1/children\?layers\=-1 > export.json
+          curl -u 'admin:password' -vvv --fail "http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/bookmark/export" > export.html
 
       - name: Remove current stable bookmarks
         run: |
@@ -124,9 +125,9 @@ jobs:
 
       - name: Export bookmarks
         run: |
-          curl -u 'admin:admin' http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/folder/-1/children\?layers\=-1 > export2.json
+          curl -u 'admin:password' -vvv --fail "http://localhost:8080/index.php/apps/bookmarks/public/rest/v2/bookmark/export" > export2.html
 
       - name: Compare exports
         run: |
-          diff export.json export2.json
+          diff export.html export2.html
 

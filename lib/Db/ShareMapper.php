@@ -151,14 +151,14 @@ class ShareMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
-	public function insert(Entity $sharedFolder): Entity {
-		$sharedFolder->setCreatedAt(time());
-		return parent::insert($sharedFolder);
+	public function insert(Entity $entity): Entity {
+		$entity->setCreatedAt(time());
+		return parent::insert($entity);
 	}
 
-	public function insertOrUpdate(Entity $sharedFolder): Entity {
-		$sharedFolder->setCreatedAt(time());
-		return parent::insertOrUpdate($sharedFolder);
+	public function insertOrUpdate(Entity $entity): Entity {
+		$entity->setCreatedAt(time());
+		return parent::insertOrUpdate($entity);
 	}
 
 	public function findBySharedFolder(int $id): Entity {
@@ -170,5 +170,22 @@ class ShareMapper extends QBMapper {
 			->innerJoin('s', 'bookmarks_shared_to_shares', 't', 's.id = t.share_id')
 			->where($qb->expr()->eq('t.shared_folder_id', $qb->createPositionalParameter($id)));
 		return $this->findEntity($qb);
+	}
+
+	/**
+	 * @param string $userId
+	 * @return array
+	 */
+	public function findByUser(string $userId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select(array_map(static function ($c) {
+			return 's.' . $c;
+		}, Share::$columns))
+			->from('bookmarks_shares', 's')
+			->leftJoin('s', 'bookmarks_shared_to_shares', 't', 's.id = t.share_id')
+			->leftJoin('t', 'bookmarks_shared_folders', 'sf', 'sf.id = t.shared_folder_id')
+			->where($qb->expr()->eq('sf.user_id', $qb->createPositionalParameter($userId)));
+
+		return $this->findEntities($qb);
 	}
 }

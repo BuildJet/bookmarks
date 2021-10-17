@@ -16,6 +16,7 @@ use OCA\Bookmarks\Db\PublicFolderMapper;
 use OCA\Bookmarks\Db\Share;
 use OCA\Bookmarks\Db\ShareMapper;
 use OCA\Bookmarks\Db\TreeMapper;
+use OCA\Bookmarks\Exception\UnauthenticatedError;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\IRequest;
@@ -52,6 +53,8 @@ class Authorizer {
 	private $userId;
 	private $token = null;
 
+	private $cors = false;
+
 	/**
 	 * @var TreeMapper
 	 */
@@ -68,6 +71,13 @@ class Authorizer {
 		$this->shareMapper = $shareMapper;
 		$this->treeMapper = $treeMapper;
 		$this->userSession = $userSession;
+	}
+
+	/**
+	 * @param bool $cors
+	 */
+	public function setCORS($cors) {
+		$this->cors = $cors;
 	}
 
 	/**
@@ -88,7 +98,7 @@ class Authorizer {
 			}
 		}
 
-		if ($this->userSession->isLoggedIn()) {
+		if (!$this->cors && $this->userSession->isLoggedIn()) {
 			$this->setUserId($this->userSession->getUser()->getUID());
 		} elseif (isset($request->server['PHP_AUTH_USER'], $request->server['PHP_AUTH_PW'])) {
 			if (false === $this->userSession->login($request->server['PHP_AUTH_USER'], $request->server['PHP_AUTH_PW'])) {
@@ -137,34 +147,38 @@ class Authorizer {
 
 	/**
 	 * @param int $folderId
-	 * @param $request
+	 * @param IRequest $request
 	 * @return int
+	 * @throws UnauthenticatedError
 	 */
 	public function getPermissionsForFolder(int $folderId, IRequest $request): int {
 		$this->setCredentials($request);
 		$perms = self::PERM_NONE;
 		if (isset($this->userId)) {
 			$perms |= $this->getUserPermissionsForFolder($this->userId, $folderId);
-		}
-		if (isset($this->token)) {
+		} elseif (isset($this->token)) {
 			$perms |= $this->getTokenPermissionsForFolder($this->token, $folderId);
+		} else {
+			throw new UnauthenticatedError();
 		}
 		return $perms;
 	}
 
 	/**
 	 * @param int $bookmarkId
-	 * @param $request
+	 * @param IRequest $request
 	 * @return int
+	 * @throws UnauthenticatedError
 	 */
 	public function getPermissionsForBookmark(int $bookmarkId, IRequest $request): int {
 		$this->setCredentials($request);
 		$perms = self::PERM_NONE;
 		if (isset($this->userId)) {
 			$perms |= $this->getUserPermissionsForBookmark($this->userId, $bookmarkId);
-		}
-		if (isset($this->token)) {
+		} elseif (isset($this->token)) {
 			$perms |= $this->getTokenPermissionsForBookmark($this->token, $bookmarkId);
+		} else {
+			throw new UnauthenticatedError();
 		}
 		return $perms;
 	}
@@ -211,7 +225,7 @@ class Authorizer {
 			/** @var Bookmark $bookmark */
 			$bookmark = $this->bookmarkMapper->find($bookmarkId);
 		} catch (DoesNotExistException $e) {
-			return self::PERM_NONE;
+			return self::PERM_ALL;
 		} catch (MultipleObjectsReturnedException $e) {
 			return self::PERM_NONE;
 		}
@@ -234,8 +248,6 @@ class Authorizer {
 	 * @param int $bookmarkId
 	 *
 	 * @return int
-	 *
-	 * @psalm-return 0|1
 	 */
 	public function getTokenPermissionsForBookmark(string $token, int $bookmarkId): int {
 		try {
@@ -265,7 +277,7 @@ class Authorizer {
 			/** @var Folder $folder */
 			$folder = $this->folderMapper->find($folderId);
 		} catch (DoesNotExistException $e) {
-			return self::PERM_NONE;
+			return self::PERM_EDIT;
 		} catch (MultipleObjectsReturnedException $e) {
 			return self::PERM_NONE;
 		}
@@ -289,7 +301,6 @@ class Authorizer {
 	 *
 	 * @return int
 	 *
-	 * @psalm-return 0|1
 	 */
 	public function getTokenPermissionsForFolder(string $token, int $folderId): int {
 		try {
